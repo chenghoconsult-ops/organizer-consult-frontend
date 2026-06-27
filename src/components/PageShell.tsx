@@ -13,6 +13,14 @@ export function PageShell({ children }: { children: ReactNode }) {
             整理師業務後台
           </Link>
           <div className="flex items-center gap-3">
+            {user?.role === 'manager' && (
+              <Link
+                to="/consultants"
+                className="text-sm font-medium text-slate-600 transition hover:text-slate-900"
+              >
+                顧問管理
+              </Link>
+            )}
             <span className="hidden text-sm text-slate-500 sm:inline">
               {user?.name}（{user?.role}）
             </span>

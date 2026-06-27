@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { CaseDetailPage } from './pages/CaseDetailPage'
 import { CasesPage } from './pages/CasesPage'
+import { ConsultantsPage } from './pages/ConsultantsPage'
 import { ConsultationFormPage } from './pages/ConsultationFormPage'
 import { LoginPage } from './pages/LoginPage'
 
@@ -30,6 +31,14 @@ export function App() {
         element={
           <ProtectedRoute>
             <ConsultationFormPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/consultants"
+        element={
+          <ProtectedRoute>
+            <ConsultantsPage />
           </ProtectedRoute>
         }
       />

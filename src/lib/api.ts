@@ -216,3 +216,33 @@ export function assignCase(
     body: JSON.stringify({ assignedToId }),
   })
 }
+
+// --- Users (manager-only consultant management) ---
+
+export interface ManagedUser {
+  id: string
+  name: string
+  email: string
+  role: string
+  createdAt: string
+  _count: { assignedCases: number }
+}
+
+export function getUsers(): Promise<ManagedUser[]> {
+  return apiFetch<ManagedUser[]>('/users')
+}
+
+export function createConsultant(input: {
+  email: string
+  password: string
+  name?: string
+}): Promise<ManagedUser> {
+  return apiFetch<ManagedUser>('/users', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  })
+}
+
+export function deleteUser(id: string): Promise<{ id: string }> {
+  return apiFetch<{ id: string }>(`/users/${id}`, { method: 'DELETE' })
+}
