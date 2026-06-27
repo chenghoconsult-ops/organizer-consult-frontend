@@ -71,6 +71,148 @@ export function getMe(): Promise<AuthUser> {
   return apiFetch<AuthUser>('/auth/me')
 }
 
-export function getCases(): Promise<unknown[]> {
-  return apiFetch<unknown[]>('/cases')
+// --- Cases (Phase 1) ---
+
+export type CaseStatus =
+  | 'dataProvided'
+  | 'onlineConsultScheduled'
+  | 'onlineConsultDone'
+  | 'siteSurveyScheduled'
+  | 'siteSurveyDone'
+  | 'quoteProvided'
+  | 'depositReceived'
+  | 'serviceDone'
+  | 'balanceBillProvided'
+  | 'balancePaid'
+  | 'invoiceIssued'
+  | 'reviewReceived'
+  | 'closed'
+
+export interface UserSummary {
+  id: string
+  name: string
+  email: string
+  role: string
+}
+
+export interface CaseListItem {
+  id: string
+  caseNumber: string
+  status: CaseStatus
+  customerName: string
+  phone: string | null
+  email: string | null
+  assignedToId: string | null
+  assignedTo: UserSummary | null
+  createdAt: string
+}
+
+export interface CaseStatusLog {
+  id: string
+  fromStatus: CaseStatus | null
+  toStatus: CaseStatus
+  changedBy: UserSummary | null
+  note: string | null
+  changedAt: string
+}
+
+export interface ConsultationRequest {
+  id: string
+  serviceExperience: string
+  housingPlan: string
+  serviceArea: string
+  targetMonth: string
+  targetMonthOther: string | null
+  serviceInterests: string[]
+  consultTimeSlots: string[]
+  moveInDate: string | null
+  name: string
+  email: string
+  phone: string
+  lineId: string | null
+  altContact: string | null
+  serviceAddress: string
+  newHomeAddress: string | null
+  budgetRange: string
+  housingTypes: string[]
+  housingTypeOther: string | null
+  customerIdentity: string
+  customerIdentityOther: string | null
+  referralSource: string
+  referralSourceOther: string | null
+  additionalNotes: string | null
+  source: string
+  createdAt: string
+}
+
+export interface CaseDetail extends CaseListItem {
+  address: string | null
+  lineUserId: string | null
+  createdBy: UserSummary | null
+  consultationRequest: ConsultationRequest | null
+  statusLogs: CaseStatusLog[]
+}
+
+export interface ConsultationInput {
+  serviceExperience: string
+  housingPlan: string
+  serviceArea: string
+  targetMonth: string
+  targetMonthOther?: string
+  serviceInterests: string[]
+  consultTimeSlots: string[]
+  moveInDate?: string
+  name: string
+  email: string
+  phone: string
+  lineId?: string
+  altContact?: string
+  serviceAddress: string
+  newHomeAddress?: string
+  budgetRange: string
+  housingTypes: string[]
+  housingTypeOther?: string
+  customerIdentity: string
+  customerIdentityOther?: string
+  referralSource: string
+  referralSourceOther?: string
+  additionalNotes?: string
+}
+
+export function getCases(): Promise<CaseListItem[]> {
+  return apiFetch<CaseListItem[]>('/cases')
+}
+
+export function getCase(id: string): Promise<CaseDetail> {
+  return apiFetch<CaseDetail>(`/cases/${id}`)
+}
+
+export function createConsultation(
+  data: ConsultationInput,
+): Promise<CaseListItem> {
+  return apiFetch<CaseListItem>('/consultations', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+export function advanceCaseStatus(
+  id: string,
+  toStatus: CaseStatus,
+  note?: string,
+): Promise<CaseListItem> {
+  return apiFetch<CaseListItem>(`/cases/${id}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify({ toStatus, note }),
+  })
+}
+
+export function assignCase(
+  id: string,
+  assignedToId: string | null,
+): Promise<CaseListItem> {
+  return apiFetch<CaseListItem>(`/cases/${id}/assign`, {
+    method: 'PATCH',
+    body: JSON.stringify({ assignedToId }),
+  })
 }
