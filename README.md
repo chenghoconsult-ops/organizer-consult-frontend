@@ -5,6 +5,11 @@
 Phase 0 scope: login page + a protected, empty case-list page with logout. Talks to
 `organizer-consult-backend` over REST. Responsive for desktop and iPad.
 
+## Related repositories
+- **Backend**: [`organizer-consult-backend`](../organizer-consult-backend) — NestJS API
+  (auth, cases) this UI talks to. Run it first; the roadmap (`project.md`) lives there.
+- Both deploy to **Zeabur** (frontend static service + backend + managed PostgreSQL).
+
 ## Stack
 - React 19 + Vite + TypeScript
 - Tailwind CSS v4 (`@tailwindcss/vite`)
