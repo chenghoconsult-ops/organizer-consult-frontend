@@ -5,11 +5,13 @@ import { CasesPage } from './pages/CasesPage'
 import { ConsultantsPage } from './pages/ConsultantsPage'
 import { ConsultationFormPage } from './pages/ConsultationFormPage'
 import { LoginPage } from './pages/LoginPage'
+import { PublicConsultationPage } from './pages/PublicConsultationPage'
 
 export function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/booking" element={<PublicConsultationPage />} />
       <Route
         path="/cases"
         element={

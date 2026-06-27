@@ -205,6 +205,16 @@ export function createConsultation(
   })
 }
 
+// Public website intake (no auth) — customer self-service booking form.
+export function createWebIntake(
+  data: ConsultationInput,
+): Promise<CaseListItem> {
+  return apiFetch<CaseListItem>('/intake/web', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
 export function advanceCaseStatus(
   id: string,
   toStatus: CaseStatus,

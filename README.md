@@ -44,6 +44,9 @@ load data unless the backend is running — if requests fail, check it's up on t
 `VITE_API_BASE_URL`.
 
 ## Routes
+- `/booking` — **public** customer self-service consultation form (no login; posts to
+  `POST /intake/web`). Reuses the same form as the consultant intake, without the backend
+  toolbar.
 - `/login` — login
 - `/cases` — case list (grouped mine → unassigned → others, search, claim)
 - `/cases/:id` — case detail: customer + consultation content, status timeline,
