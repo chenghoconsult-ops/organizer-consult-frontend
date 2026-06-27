@@ -21,16 +21,27 @@ Phase 0 基礎：登入頁 + 受保護路由 + 登出。
 
 ## Local development
 
-Requires Node 22+ and the backend running (default `http://127.0.0.1:3000`).
+Requires Node 22+ and the backend running (default `http://127.0.0.1:3000` — start it
+first; see its README).
+
+First-time setup:
 
 ```bash
 npm ci
 cp .env.example .env     # set VITE_API_BASE_URL if the backend isn't on :3000
+```
+
+### Run the dev server (day to day)
+
+```bash
 npm run dev              # http://localhost:5173
 ```
 
-Log in with the backend's seeded manager account (`SEED_ADMIN_*`). Add consultants from
-顧問管理 (manager only).
+Open http://localhost:5173 and log in with the backend's seeded manager account
+(`SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD`). Add consultants from 顧問管理 (manager only).
+Stop with `Ctrl+C`. Hot-reload is on, so edits show up without a restart. The page won't
+load data unless the backend is running — if requests fail, check it's up on the URL in
+`VITE_API_BASE_URL`.
 
 ## Routes
 - `/login` — login
