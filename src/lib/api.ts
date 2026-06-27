@@ -145,12 +145,21 @@ export interface ConsultationRequest {
   createdAt: string
 }
 
+export interface CaseAssignmentLog {
+  id: string
+  fromAssignedTo: UserSummary | null
+  toAssignedTo: UserSummary | null
+  changedBy: UserSummary | null
+  changedAt: string
+}
+
 export interface CaseDetail extends CaseListItem {
   address: string | null
   lineUserId: string | null
   createdBy: UserSummary | null
   consultationRequest: ConsultationRequest | null
   statusLogs: CaseStatusLog[]
+  assignmentLogs: CaseAssignmentLog[]
 }
 
 export interface ConsultationInput {

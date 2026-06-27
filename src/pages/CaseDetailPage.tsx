@@ -5,6 +5,7 @@ import {
   advanceCaseStatus,
   assignCase,
   getCase,
+  getUsers,
   type CaseStatus,
   type ConsultationRequest,
 } from '../lib/api'
@@ -37,11 +38,19 @@ export function CaseDetailPage() {
   const { user } = useAuth()
   const queryClient = useQueryClient()
   const [note, setNote] = useState('')
+  const isManager = user?.role === 'manager'
 
   const { data: c, isLoading, isError } = useQuery({
     queryKey: ['case', id],
     queryFn: () => getCase(id!),
     enabled: !!id,
+  })
+
+  // Consultant list for the manager's assignment picker (manager-only endpoint).
+  const { data: users } = useQuery({
+    queryKey: ['users'],
+    queryFn: getUsers,
+    enabled: isManager,
   })
 
   const invalidate = () => {
@@ -79,10 +88,40 @@ export function CaseDetailPage() {
       </PageShell>
     )
 
-  const isManager = user?.role === 'manager'
   const isAssignee = c.assignedToId === user?.id
   const canAdvance = isManager || isAssignee
   const next = nextStatus(c.status)
+
+  // Merge status changes + assignment changes into one chronological timeline.
+  const assignText = (
+    from: { name: string } | null,
+    to: { name: string } | null,
+  ) => {
+    if (!from && to) return `指派給 ${to.name}`
+    if (from && !to) return `解除指派（原 ${from.name}）`
+    if (from && to) return `改派：${from.name} → ${to.name}`
+    return '指派變更'
+  }
+  const timeline = [
+    ...c.statusLogs.map((log) => ({
+      id: log.id,
+      at: log.changedAt,
+      kind: '狀態' as const,
+      title: log.fromStatus
+        ? `${STATUS_LABELS[log.fromStatus]} → ${STATUS_LABELS[log.toStatus]}`
+        : STATUS_LABELS[log.toStatus],
+      by: log.changedBy?.name ?? null,
+      note: log.note,
+    })),
+    ...c.assignmentLogs.map((log) => ({
+      id: log.id,
+      at: log.changedAt,
+      kind: '指派' as const,
+      title: assignText(log.fromAssignedTo, log.toAssignedTo),
+      by: log.changedBy?.name ?? null,
+      note: null as string | null,
+    })),
+  ].sort((a, b) => a.at.localeCompare(b.at))
 
   return (
     <PageShell>
@@ -172,38 +211,31 @@ export function CaseDetailPage() {
               </p>
             )}
 
-            {/* 指派操作 */}
+            {/* 指派操作（僅經理） */}
             <div className="border-t border-slate-100 pt-3">
-              {c.assignedToId === null ? (
-                <button
-                  onClick={() => reassign.mutate(user!.id)}
-                  disabled={reassign.isPending}
-                  className="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 disabled:opacity-50"
-                >
-                  認領給自己
-                </button>
-              ) : isManager ? (
-                <div className="space-y-2">
-                  {!isAssignee && (
-                    <button
-                      onClick={() => reassign.mutate(user!.id)}
-                      disabled={reassign.isPending}
-                      className="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 disabled:opacity-50"
-                    >
-                      改派給自己
-                    </button>
-                  )}
-                  <button
-                    onClick={() => reassign.mutate(null)}
+              {isManager ? (
+                <label className="block">
+                  <span className="mb-1 block text-sm font-medium text-slate-700">
+                    指派顧問
+                  </span>
+                  <select
+                    value={c.assignedToId ?? ''}
                     disabled={reassign.isPending}
-                    className="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 disabled:opacity-50"
+                    onChange={(e) => reassign.mutate(e.target.value || null)}
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 disabled:opacity-50"
                   >
-                    解除指派
-                  </button>
-                </div>
+                    <option value="">未指派</option>
+                    {(users ?? []).map((u) => (
+                      <option key={u.id} value={u.id}>
+                        {u.name}（{u.role === 'manager' ? '經理' : '顧問'}）
+                      </option>
+                    ))}
+                  </select>
+                </label>
               ) : (
                 <p className="text-xs text-slate-400">
-                  已指派給 {c.assignedTo?.name}。
+                  指派對象：{c.assignedTo ? c.assignedTo.name : '未指派'}
+                  （僅經理可調整）
                 </p>
               )}
               {reassign.isError && (
@@ -214,23 +246,34 @@ export function CaseDetailPage() {
             </div>
           </Card>
 
-          <Card title="狀態時間軸">
+          <Card title="案件時間軸">
             <ol className="space-y-3">
-              {c.statusLogs.map((log) => (
-                <li key={log.id} className="flex gap-3">
-                  <div className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-slate-300" />
+              {timeline.map((ev) => (
+                <li key={`${ev.kind}-${ev.id}`} className="flex gap-3">
+                  <div
+                    className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${
+                      ev.kind === '指派' ? 'bg-indigo-400' : 'bg-slate-300'
+                    }`}
+                  />
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-slate-800">
-                      {log.fromStatus
-                        ? `${STATUS_LABELS[log.fromStatus]} → ${STATUS_LABELS[log.toStatus]}`
-                        : STATUS_LABELS[log.toStatus]}
+                      <span
+                        className={`mr-1.5 rounded px-1 py-0.5 text-[10px] font-medium ${
+                          ev.kind === '指派'
+                            ? 'bg-indigo-100 text-indigo-700'
+                            : 'bg-slate-100 text-slate-600'
+                        }`}
+                      >
+                        {ev.kind}
+                      </span>
+                      {ev.title}
                     </p>
                     <p className="text-xs text-slate-400">
-                      {formatDateTime(log.changedAt)}
-                      {log.changedBy ? ` · ${log.changedBy.name}` : ''}
+                      {formatDateTime(ev.at)}
+                      {ev.by ? ` · ${ev.by}` : ''}
                     </p>
-                    {log.note && (
-                      <p className="mt-0.5 text-xs text-slate-500">{log.note}</p>
+                    {ev.note && (
+                      <p className="mt-0.5 text-xs text-slate-500">{ev.note}</p>
                     )}
                   </div>
                 </li>
