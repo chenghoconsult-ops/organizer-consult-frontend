@@ -2,8 +2,11 @@
 
 整理師業務後台系統 — 顧問後台前端 (React + Vite + TypeScript).
 
-Phase 0 scope: login page + a protected, empty case-list page with logout. Talks to
-`organizer-consult-backend` over REST. Responsive for desktop and iPad.
+**Phase 1 (current)**: 案件列表（依 指派給我 → 未指派 → 指派給他人 分組、搜尋、認領）、
+案件詳情（客戶/諮詢內容 + 狀態時間軸 + 推進/認領/指派）、顧問代填預約諮詢表單、
+經理的顧問帳號管理頁。Talks to `organizer-consult-backend` over REST. 響應式（桌機 + iPad）。
+
+Phase 0 基礎：登入頁 + 受保護路由 + 登出。
 
 ## Related repositories
 - **Backend**: [`organizer-consult-backend`](../organizer-consult-backend) — NestJS API
@@ -26,13 +29,25 @@ cp .env.example .env     # set VITE_API_BASE_URL if the backend isn't on :3000
 npm run dev              # http://localhost:5173
 ```
 
-Log in with the backend's seeded manager account (`SEED_ADMIN_*`).
+Log in with the backend's seeded manager account (`SEED_ADMIN_*`). Add consultants from
+顧問管理 (manager only).
+
+## Routes
+- `/login` — login
+- `/cases` — case list (grouped mine → unassigned → others, search, claim)
+- `/cases/:id` — case detail: customer + consultation content, status timeline,
+  advance/claim/assign actions (gated by role + assignee)
+- `/consultation/new` — consultant proxy intake form
+- `/consultants` — consultant account management (**manager only**; others redirect to `/cases`)
 
 ## Structure
 - `src/lib/api.ts` — fetch wrapper + token storage + typed endpoints
+- `src/lib/labels.ts` — `CaseStatus` ordering + zh-TW labels for consultation enums
 - `src/lib/auth.tsx` — `AuthProvider` / `useAuth` (login, logout, session restore)
 - `src/components/ProtectedRoute.tsx` — redirects to `/login` when unauthenticated
-- `src/pages/LoginPage.tsx`, `src/pages/CasesPage.tsx`
+- `src/components/PageShell.tsx` — shared header/nav; `StatusBadge.tsx` — status pill
+- `src/pages/` — `LoginPage`, `CasesPage`, `CaseDetailPage`, `ConsultationFormPage`,
+  `ConsultantsPage`
 
 ## Environment variables
 - `VITE_API_BASE_URL` — backend base URL (no trailing slash). Set per-environment in
