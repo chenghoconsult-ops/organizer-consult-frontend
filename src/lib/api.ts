@@ -121,8 +121,8 @@ export interface ConsultationRequest {
   serviceExperience: string
   housingPlan: string
   serviceArea: string
+  serviceDistrict: string
   targetMonth: string
-  targetMonthOther: string | null
   serviceInterests: string[]
   consultTimeSlots: string[]
   moveInDate: string | null
@@ -166,8 +166,8 @@ export interface ConsultationInput {
   serviceExperience: string
   housingPlan: string
   serviceArea: string
+  serviceDistrict: string
   targetMonth: string
-  targetMonthOther?: string
   serviceInterests: string[]
   consultTimeSlots: string[]
   moveInDate?: string

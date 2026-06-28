@@ -55,22 +55,18 @@ export const HOUSING_PLAN: Record<string, string> = {
 }
 
 export const SERVICE_AREA: Record<string, string> = {
-  keelung: '基隆',
-  taipei: '雙北',
-  taoyuan: '桃園',
-  hsinchu: '新竹',
-  online: '線上指導',
-  referral: '協助轉介',
+  keelung: '基隆市',
+  taipei: '臺北市',
+  newTaipei: '新北市',
+  taoyuan: '桃園市',
+  hsinchuCity: '新竹市',
+  hsinchuCounty: '新竹縣',
 }
 
-export const TARGET_MONTH: Record<string, string> = {
-  july: '七月',
-  august: '八月',
-  september: '九月',
-  october: '十月',
-  november: '十一月',
-  december: '十二月',
-  other: '其他',
+// 希望完成月份以 "YYYY-MM" 字串儲存，顯示為「2026 年 7 月」。
+export function formatTargetMonth(v: string): string {
+  const [y, m] = v.split('-')
+  return m ? `${y} 年 ${Number(m)} 月` : v
 }
 
 export const SERVICE_INTEREST: Record<string, string> = {

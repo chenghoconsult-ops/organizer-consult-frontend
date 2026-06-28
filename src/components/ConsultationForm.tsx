@@ -10,15 +10,15 @@ import {
   SERVICE_AREA,
   SERVICE_EXPERIENCE,
   SERVICE_INTEREST,
-  TARGET_MONTH,
 } from '../lib/labels'
+import { DISTRICTS, addressMatchesArea, parseAddress } from '../lib/districts'
 
 interface FormState {
   serviceExperience: string
   housingPlan: string
   serviceArea: string
+  serviceDistrict: string
   targetMonth: string
-  targetMonthOther: string
   serviceInterests: string[]
   consultTimeSlots: string[]
   moveInDate: string
@@ -43,8 +43,8 @@ const EMPTY: FormState = {
   serviceExperience: '',
   housingPlan: '',
   serviceArea: '',
+  serviceDistrict: '',
   targetMonth: '',
-  targetMonthOther: '',
   serviceInterests: [],
   consultTimeSlots: [],
   moveInDate: '',
@@ -84,6 +84,7 @@ export function ConsultationForm({
 }) {
   const [f, setF] = useState<FormState>(EMPTY)
   const [validationError, setValidationError] = useState<string | null>(null)
+  const currentMonth = new Date().toISOString().slice(0, 7)
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setF((prev) => ({ ...prev, [key]: value }))
@@ -96,6 +97,23 @@ export function ConsultationForm({
         [key]: arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v],
       }
     })
+
+  // 服務地址：使用者貼上完整地址時，自動帶出縣市/區域（解析不到就維持手選的值）。
+  const setAddress = (v: string) =>
+    setF((prev) => {
+      const next = { ...prev, serviceAddress: v }
+      const { city, district } = parseAddress(v)
+      if (city) {
+        if (city !== prev.serviceArea) next.serviceDistrict = ''
+        next.serviceArea = city
+        if (district) next.serviceDistrict = district
+      }
+      return next
+    })
+
+  // 縣市改變時清空區域（避免殘留前一個縣市的區域）。
+  const setCity = (v: string) =>
+    setF((prev) => ({ ...prev, serviceArea: v, serviceDistrict: '' }))
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -110,13 +128,18 @@ export function ConsultationForm({
       return
     }
 
+    if (!addressMatchesArea(f.serviceAddress, f.serviceArea, f.serviceDistrict)) {
+      setValidationError('服務地址與所選的縣市／區域不符，請確認地址是否包含所選縣市與區域。')
+      return
+    }
+
     const clean = (s: string) => (s.trim() ? s.trim() : undefined)
     const payload: ConsultationInput = {
       serviceExperience: f.serviceExperience,
       housingPlan: f.housingPlan,
       serviceArea: f.serviceArea,
+      serviceDistrict: f.serviceDistrict,
       targetMonth: f.targetMonth,
-      targetMonthOther: clean(f.targetMonthOther),
       serviceInterests: f.serviceInterests,
       consultTimeSlots: f.consultTimeSlots,
       moveInDate: clean(f.moveInDate),
@@ -166,23 +189,13 @@ export function ConsultationForm({
           value={f.housingPlan}
           onChange={(v) => set('housingPlan', v)}
         />
-        <Radio
-          label="服務區域"
-          required
-          options={SERVICE_AREA}
-          value={f.serviceArea}
-          onChange={(v) => set('serviceArea', v)}
-        />
-        <Radio
+        <MonthPicker
           label="希望完成月份"
           required
-          options={TARGET_MONTH}
+          min={currentMonth}
           value={f.targetMonth}
           onChange={(v) => set('targetMonth', v)}
         />
-        {f.targetMonth === 'other' && (
-          <Text label="月份（其他）" value={f.targetMonthOther} onChange={(v) => set('targetMonthOther', v)} />
-        )}
         <Checks
           label="想了解的服務（多選）"
           required
@@ -234,7 +247,14 @@ export function ConsultationForm({
       </Section>
 
       <Section title="地址與補充">
-        <Text label="服務地址" required value={f.serviceAddress} onChange={(v) => set('serviceAddress', v)} />
+        <AreaSelect
+          required
+          city={f.serviceArea}
+          district={f.serviceDistrict}
+          onCity={setCity}
+          onDistrict={(v) => set('serviceDistrict', v)}
+        />
+        <Text label="服務地址" required value={f.serviceAddress} onChange={setAddress} />
         <Text label="新家地址（選填）" value={f.newHomeAddress} onChange={(v) => set('newHomeAddress', v)} />
         <Text label="搬入日期（選填）" value={f.moveInDate} onChange={(v) => set('moveInDate', v)} />
         <Area label="補充說明" value={f.additionalNotes} onChange={(v) => set('additionalNotes', v)} />
@@ -330,6 +350,146 @@ function Area({
         className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
       />
     </label>
+  )
+}
+
+// 服務縣市 + 區域：兩個連動下拉（縣市決定區域選項）。使用原生 <select>，
+// 中文選項由系統正常顯示（不像 <input type="month"> 會受瀏覽器語系影響）。
+function AreaSelect({
+  city,
+  district,
+  onCity,
+  onDistrict,
+  required,
+}: {
+  city: string
+  district: string
+  onCity: (v: string) => void
+  onDistrict: (v: string) => void
+  required?: boolean
+}) {
+  const cls =
+    'mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 disabled:bg-slate-100 disabled:text-slate-400'
+  const districts = city ? DISTRICTS[city] ?? [] : []
+
+  return (
+    <div>
+      <Label label="服務縣市 / 區域" required={required} />
+      <div className="mt-1 flex gap-2">
+        <select
+          required={required}
+          value={city}
+          onChange={(e) => onCity(e.target.value)}
+          className={cls}
+        >
+          <option value="" disabled>
+            縣市
+          </option>
+          {Object.entries(SERVICE_AREA).map(([k, v]) => (
+            <option key={k} value={k}>
+              {v}
+            </option>
+          ))}
+        </select>
+        <select
+          required={required}
+          value={district}
+          onChange={(e) => onDistrict(e.target.value)}
+          disabled={!city}
+          className={cls}
+        >
+          <option value="" disabled>
+            區域
+          </option>
+          {districts.map((d) => (
+            <option key={d} value={d}>
+              {d}
+            </option>
+          ))}
+        </select>
+      </div>
+    </div>
+  )
+}
+
+const CHINESE_MONTHS = [
+  '一月', '二月', '三月', '四月', '五月', '六月',
+  '七月', '八月', '九月', '十月', '十一月', '十二月',
+]
+
+// 希望完成月份：年 + 月 兩個下拉，固定中文月份（不依賴瀏覽器語系），
+// 值以 "YYYY-MM" 字串輸出。min（"YYYY-MM"）限制不可選擇早於當月。
+function MonthPicker({
+  label,
+  value,
+  onChange,
+  required,
+  min,
+}: {
+  label: string
+  value: string
+  onChange: (v: string) => void
+  required?: boolean
+  min: string
+}) {
+  const [minYear, minMonth] = min.split('-').map(Number)
+  const initial = value ? value.split('-').map(Number) : [0, 0]
+  // 年/月分開保存，使用者只選了年（還沒選月）時也要記住，否則無法限制當年的月份。
+  const [year, setYear] = useState(initial[0])
+  const [month, setMonth] = useState(initial[1])
+  // 可選年份：當年 + 明年（minYear 來自 min，即當月，故隨系統時間變動）
+  const years = [minYear, minYear + 1]
+
+  const emit = (y: number, m: number) => {
+    setYear(y)
+    setMonth(m)
+    onChange(y && m ? `${y}-${String(m).padStart(2, '0')}` : '')
+  }
+
+  const cls =
+    'mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900'
+
+  return (
+    <div>
+      <Label label={label} required={required} />
+      <div className="mt-1 flex gap-2">
+        <select
+          required={required}
+          value={year || ''}
+          onChange={(e) => {
+            const y = Number(e.target.value)
+            // 若改為當年且原本選的月份已早於 min，清除月份
+            const m = month && (y > minYear || month >= minMonth) ? month : 0
+            emit(y, m)
+          }}
+          className={cls}
+        >
+          <option value="" disabled>
+            年
+          </option>
+          {years.map((y) => (
+            <option key={y} value={y}>
+              {y} 年
+            </option>
+          ))}
+        </select>
+        <select
+          required={required}
+          value={month || ''}
+          onChange={(e) => emit(year, Number(e.target.value))}
+          className={cls}
+        >
+          <option value="" disabled>
+            月
+          </option>
+          {CHINESE_MONTHS.map((name, idx) => (
+            <option key={idx} value={idx + 1} disabled={year === minYear && idx + 1 < minMonth}>
+              {name}
+            </option>
+          ))}
+        </select>
+      </div>
+    </div>
   )
 }
 

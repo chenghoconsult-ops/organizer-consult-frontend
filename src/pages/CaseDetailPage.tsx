@@ -23,7 +23,7 @@ import {
   SERVICE_EXPERIENCE,
   SERVICE_INTEREST,
   STATUS_LABELS,
-  TARGET_MONTH,
+  formatTargetMonth,
   nextStatus,
 } from '../lib/labels'
 
@@ -316,11 +316,9 @@ function ConsultationCard({ cr }: { cr: ConsultationRequest }) {
         value={SERVICE_EXPERIENCE[cr.serviceExperience]}
       />
       <Field label="換屋計畫" value={HOUSING_PLAN[cr.housingPlan]} />
-      <Field label="服務區域" value={SERVICE_AREA[cr.serviceArea]} />
-      <Field
-        label="希望月份"
-        value={cr.targetMonthOther || TARGET_MONTH[cr.targetMonth]}
-      />
+      <Field label="服務縣市" value={SERVICE_AREA[cr.serviceArea]} />
+      <Field label="服務區域" value={cr.serviceDistrict} />
+      <Field label="希望月份" value={formatTargetMonth(cr.targetMonth)} />
       <Field
         label="想了解服務"
         value={mapList(cr.serviceInterests, SERVICE_INTEREST)}

@@ -53,6 +53,12 @@ proxy/port mismatch.
   variant, parameterize that component rather than copy-pasting the ~400 lines.
 - Responsive matters (desktop + iPad). Quick check: `preview_resize` tablet, assert no
   horizontal overflow (`scrollWidth <= innerWidth`).
+- **Don't use native `<input type="month">`/`type="date"` for client-facing fields**: the
+  rendered month/day names follow the browser/OS locale, not our `<html lang="zh-Hant">`, so
+  some visitors see English ("October"). Clients may read only Chinese. The 希望完成月份 field
+  is therefore a custom `MonthPicker` (`ConsultationForm.tsx`) — two `<select>`s (年 + 月) with
+  hard-coded Chinese month names (`一月`…`十二月`), emitting a `"YYYY-MM"` string. Reuse that
+  pattern for any new date-ish picker that must always display Chinese.
 
 ## Token-efficient working here
 - Edits usually start in `lib/api.ts` (contract) → the relevant `pages/` file → maybe a shared
