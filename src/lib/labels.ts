@@ -69,13 +69,39 @@ export function formatTargetMonth(v: string): string {
   return m ? `${y} 年 ${Number(m)} 月` : v
 }
 
-export const SERVICE_INTEREST: Record<string, string> = {
+// 想了解的服務：選項依 housingPlan 分流。
+// 是 → 成家方案（newHome）：沿用原本 6 項。
+export const SERVICE_INTEREST_NEW_HOME: Record<string, string> = {
   designPlanning: 'A. 裝修前-收納設計規劃',
   sortingPacking: 'B. 舊家物品檢視、分類打包',
   moving: 'C. 搬運（有配合的搬運公司）',
   unboxingShelving: 'D. 新家開箱上架',
   storageShopping: 'E. 新家收納品採購規劃',
   notSureConsult: '不知道，跟顧問聊聊',
+}
+
+// 否 → 原屋優化改造方案（existingUpgrade）：7 項。
+export const SERVICE_INTEREST_EXISTING: Record<string, string> = {
+  publicSpaceOrganizing: '好感家事收納規劃-公共空間',
+  bedroomClothingOrganizing: '高效衣物管理收納規劃-臥室空間',
+  kidsSpacePlanning: '成長式育兒空間規劃',
+  smallHomeStorageDesign: '小宅收納設計規劃',
+  onlineGuidanceRemote: '其他縣市、海外線上收納指導',
+  charityApplication: '公益案件申請',
+  notSureWhereToStart: '不知道該從何開始，想跟顧問聊聊',
+}
+
+// 顯示用（CaseDetail / mapList）：涵蓋全部 13 個值。
+export const SERVICE_INTEREST: Record<string, string> = {
+  ...SERVICE_INTEREST_NEW_HOME,
+  ...SERVICE_INTEREST_EXISTING,
+}
+
+// 依 housingPlan 取得對應的服務選項（未選 housingPlan 時回傳空集合）。
+export function serviceInterestOptions(housingPlan: string): Record<string, string> {
+  if (housingPlan === 'existingUpgrade') return SERVICE_INTEREST_EXISTING
+  if (housingPlan === 'newHome') return SERVICE_INTEREST_NEW_HOME
+  return {}
 }
 
 export const CONSULT_TIME_SLOT: Record<string, string> = {
@@ -86,11 +112,43 @@ export const CONSULT_TIME_SLOT: Record<string, string> = {
   weekendEvening: '週末 晚上 20:00-22:00',
 }
 
-export const BUDGET_RANGE: Record<string, string> = {
-  under40k: '4 萬以下',
-  range40to60k: '4 萬–6 萬',
-  range50to70k: '5–7 萬',
-  from100k: '10 萬起',
+export const INTERIOR_AREA: Record<string, string> = {
+  under10: '10 坪以下',
+  range10to19: '10-19 坪',
+  range20to29: '20-29 坪',
+  range30to39: '30-39 坪',
+  range40to49: '40-49 坪',
+  from50: '50 坪以上',
+}
+
+// 建議預算區間：依 housingPlan + interiorArea 推導（不存 DB，僅供顯示）。
+const SUGGESTED_BUDGET: Record<string, Record<string, string>> = {
+  existingUpgrade: {
+    under10: '$13,600 起',
+    range10to19: '$27,200 起',
+    range20to29: '$40,800 起',
+    range30to39: '$47,400 起',
+    range40to49: '$54,400 起',
+    from50: '另議',
+  },
+  newHome: {
+    under10: '$27,000 起',
+    range10to19: '$40,800 起',
+    range20to29: '$68,000 起',
+    range30to39: '$81,600 起',
+    range40to49: '$95,200 起',
+    from50: '另議',
+  },
+}
+
+export function suggestedBudget(housingPlan: string, interiorArea: string): string {
+  return SUGGESTED_BUDGET[housingPlan]?.[interiorArea] ?? ''
+}
+
+// 坪數選擇器下方的說明文字（依 housingPlan 不同）。
+export const INTERIOR_AREA_NOTE: Record<string, string> = {
+  existingUpgrade: '室內實坪數＆建議預算區間（不含採購費）',
+  newHome: '室內實坪數＆建議預算區間（舊家＋新家，不含搬運、採購費）',
 }
 
 export const HOUSING_TYPE: Record<string, string> = {

@@ -1,15 +1,17 @@
 import { useState, type FormEvent } from 'react'
 import type { ConsultationInput } from '../lib/api'
 import {
-  BUDGET_RANGE,
   CONSULT_TIME_SLOT,
   CUSTOMER_IDENTITY,
   HOUSING_PLAN,
   HOUSING_TYPE,
+  INTERIOR_AREA,
+  INTERIOR_AREA_NOTE,
   REFERRAL_SOURCE,
   SERVICE_AREA,
   SERVICE_EXPERIENCE,
-  SERVICE_INTEREST,
+  serviceInterestOptions,
+  suggestedBudget,
 } from '../lib/labels'
 import { DISTRICTS, addressMatchesArea, parseAddress } from '../lib/districts'
 
@@ -29,7 +31,7 @@ interface FormState {
   altContact: string
   serviceAddress: string
   newHomeAddress: string
-  budgetRange: string
+  interiorArea: string
   housingTypes: string[]
   housingTypeOther: string
   customerIdentity: string
@@ -55,7 +57,7 @@ const EMPTY: FormState = {
   altContact: '',
   serviceAddress: '',
   newHomeAddress: '',
-  budgetRange: '',
+  interiorArea: '',
   housingTypes: [],
   housingTypeOther: '',
   customerIdentity: '',
@@ -115,6 +117,10 @@ export function ConsultationForm({
   const setCity = (v: string) =>
     setF((prev) => ({ ...prev, serviceArea: v, serviceDistrict: '' }))
 
+  // 換屋/裝修/搬家改變時清空已選的服務（兩個分支的服務選項不同）。
+  const setHousingPlan = (v: string) =>
+    setF((prev) => ({ ...prev, housingPlan: v, serviceInterests: [] }))
+
   function handleSubmit(e: FormEvent) {
     e.preventDefault()
     setValidationError(null)
@@ -150,7 +156,7 @@ export function ConsultationForm({
       altContact: clean(f.altContact),
       serviceAddress: f.serviceAddress.trim(),
       newHomeAddress: clean(f.newHomeAddress),
-      budgetRange: f.budgetRange,
+      interiorArea: f.interiorArea,
       housingTypes: f.housingTypes,
       housingTypeOther: clean(f.housingTypeOther),
       customerIdentity: f.customerIdentity,
@@ -187,7 +193,7 @@ export function ConsultationForm({
           required
           options={HOUSING_PLAN}
           value={f.housingPlan}
-          onChange={(v) => set('housingPlan', v)}
+          onChange={setHousingPlan}
         />
         <MonthPicker
           label="希望完成月份"
@@ -196,13 +202,20 @@ export function ConsultationForm({
           value={f.targetMonth}
           onChange={(v) => set('targetMonth', v)}
         />
-        <Checks
-          label="想了解的服務（多選）"
-          required
-          options={SERVICE_INTEREST}
-          values={f.serviceInterests}
-          onToggle={(v) => toggle('serviceInterests', v)}
-        />
+        {f.housingPlan ? (
+          <Checks
+            label="想了解的服務（多選）"
+            required
+            options={serviceInterestOptions(f.housingPlan)}
+            values={f.serviceInterests}
+            onToggle={(v) => toggle('serviceInterests', v)}
+          />
+        ) : (
+          <div>
+            <Label label="想了解的服務（多選）" required />
+            <p className="mt-1 text-sm text-slate-500">請先選擇「是否換屋/裝修/搬家」。</p>
+          </div>
+        )}
         <Checks
           label="希望諮詢時段（多選）"
           required
@@ -210,13 +223,23 @@ export function ConsultationForm({
           values={f.consultTimeSlots}
           onToggle={(v) => toggle('consultTimeSlots', v)}
         />
-        <Radio
-          label="預算區間"
-          required
-          options={BUDGET_RANGE}
-          value={f.budgetRange}
-          onChange={(v) => set('budgetRange', v)}
-        />
+        <div>
+          <Radio
+            label="室內實坪數"
+            required
+            options={INTERIOR_AREA}
+            value={f.interiorArea}
+            onChange={(v) => set('interiorArea', v)}
+          />
+          {f.housingPlan && f.interiorArea && (
+            <p className="mt-2 text-sm text-slate-600">
+              {INTERIOR_AREA_NOTE[f.housingPlan]}：
+              <span className="font-semibold text-slate-900">
+                {suggestedBudget(f.housingPlan, f.interiorArea)}
+              </span>
+            </p>
+          )}
+        </div>
       </Section>
 
       <Section title="房屋與身份">

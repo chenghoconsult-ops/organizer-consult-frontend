@@ -133,7 +133,7 @@ export interface ConsultationRequest {
   altContact: string | null
   serviceAddress: string
   newHomeAddress: string | null
-  budgetRange: string
+  interiorArea: string
   housingTypes: string[]
   housingTypeOther: string | null
   customerIdentity: string
@@ -178,7 +178,7 @@ export interface ConsultationInput {
   altContact?: string
   serviceAddress: string
   newHomeAddress?: string
-  budgetRange: string
+  interiorArea: string
   housingTypes: string[]
   housingTypeOther?: string
   customerIdentity: string

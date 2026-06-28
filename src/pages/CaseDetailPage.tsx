@@ -13,11 +13,11 @@ import { useAuth } from '../lib/auth'
 import { PageShell } from '../components/PageShell'
 import { StatusBadge } from '../components/StatusBadge'
 import {
-  BUDGET_RANGE,
   CONSULT_TIME_SLOT,
   CUSTOMER_IDENTITY,
   HOUSING_PLAN,
   HOUSING_TYPE,
+  INTERIOR_AREA,
   REFERRAL_SOURCE,
   SERVICE_AREA,
   SERVICE_EXPERIENCE,
@@ -25,6 +25,7 @@ import {
   STATUS_LABELS,
   formatTargetMonth,
   nextStatus,
+  suggestedBudget,
 } from '../lib/labels'
 
 function formatDateTime(iso: string): string {
@@ -327,7 +328,8 @@ function ConsultationCard({ cr }: { cr: ConsultationRequest }) {
         label="諮詢時段"
         value={mapList(cr.consultTimeSlots, CONSULT_TIME_SLOT)}
       />
-      <Field label="預算" value={BUDGET_RANGE[cr.budgetRange]} />
+      <Field label="室內實坪數" value={INTERIOR_AREA[cr.interiorArea]} />
+      <Field label="建議預算區間" value={suggestedBudget(cr.housingPlan, cr.interiorArea)} />
       <Field
         label="房屋類型"
         value={
